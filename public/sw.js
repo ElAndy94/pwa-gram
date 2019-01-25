@@ -17,6 +17,19 @@ const STATIC_FILES = [
   'https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css'
 ];
 
+// trimCache = (cacheName, maxItems) => {
+//   caches.open(cacheName)
+//     .then((cache) => {
+//       return cache.keys()
+//     })
+//     .then((keys) => {
+//       if (keys.length > maxItems) {
+//         cache.delete(keys[0])
+//           .then(trimCache(cacheName, maxItems));
+//       }
+//     });
+// }
+
 self.addEventListener('install', (event) => {
   console.log('[Service Worker] Installing Service Worker ...', event);
   event.waitUntil(
@@ -44,6 +57,17 @@ self.addEventListener('activate', (event) => {
   return self.clients.claim();
 });
 
+isInArray = (string, array) => {
+  var cachePath;
+  if (string.indexOf(self.origin) === 0) { // request targets domain where we serve the page from (i.e. NOT a CDN)
+    // console.log('matched ', string);
+    cachePath = string.substring(self.origin.length); // take the part of the URL AFTER the domain (e.g. after localhost:8080)
+  } else {
+    cachePath = string; // store the full request (for CDNs)
+  }
+  return array.indexOf(cachePath) > -1;
+}
+
 self.addEventListener('fetch', (event) => {
   const url = 'https://httpbin.org/get';
 
@@ -53,6 +77,7 @@ self.addEventListener('fetch', (event) => {
         .then((cache) => {
           return fetch(event.request)
             .then((res) => {
+              // trimCache(CACHE_DYNAMIC_NAME, 10);
               cache.put(event.request, res.clone());
               return res;
             })
@@ -61,7 +86,7 @@ self.addEventListener('fetch', (event) => {
             });
         })
     ); 
-  } else if (new RegExp('\\b' + STATIC_FILES.join('\\b|\\b') + '\\b').test(event.request.url)) {
+  } else if (isInArray(event.request.url, STATIC_FILES)) {
     event.respondWith(
       caches.match(event.request)
     ); 
@@ -76,6 +101,7 @@ self.addEventListener('fetch', (event) => {
               .then((res) => {
                 return caches.open(CACHE_DYNAMIC_NAME)
                   .then((cache) => {
+                    // trimCache(CACHE_DYNAMIC_NAME, 10);
                     cache.put(event.request.url, res.clone());
                     return res;
                   })
@@ -83,7 +109,7 @@ self.addEventListener('fetch', (event) => {
               .catch((err) => {
                 return caches.open(CACHE_STATIC_NAME)
                   .then((cache) => {
-                    if (event.request.url.indexOf('/help')) {
+                    if (event.request.headers.get('accept').includes('text/html')) {
                       return cache.match('/offline.html');
                     }  
                   });
