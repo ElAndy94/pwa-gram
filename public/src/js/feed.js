@@ -8,7 +8,7 @@ function openCreatePostModal() {
     deferredPrompt.prompt();
 
     deferredPrompt.userChoice
-      .then( (choiceResult) => {
+      .then((choiceResult) => {
         console.log(choiceResult.outcome);
         if (choiceResult.outcome === 'dismissed') {
           console.log('User cancelled installation');
