@@ -5,7 +5,7 @@ const STATIC_FILES = [
   '/index.html',
   '/offline.html',
   '/src/js/app.js',
-  '/src/js/feed.js',
+  '/src/js/feedV2.js',
   '/src/js/promise.js',
   '/src/js/fetch.js',
   '/src/js/material.min.js',
@@ -69,7 +69,7 @@ isInArray = (string, array) => {
 }
 
 self.addEventListener('fetch', (event) => {
-  const url = 'https://httpbin.org/get';
+  const url = 'https://pwagram-684eb.firebaseio.com/posts.json';
 
   if (event.request.url.indexOf(url) > -1) {
     event.respondWith(
