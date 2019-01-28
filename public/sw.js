@@ -79,12 +79,15 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(fetch(event.request)
       .then((res) => {
         let clonedRes = res.clone();
-        clonedRes.json()
-          .then((data) => {
-            for (let key in data) {
-              writeData('posts', data[key]);
-            }
-          });
+        clearAllData('posts')
+          .then(() => {
+            return clonedRes.json();
+          })
+            .then((data) => {
+              for (let key in data) {
+                writeData('posts', data[key]);
+              }
+            });
         return res;
       })
     ); 
@@ -121,6 +124,46 @@ self.addEventListener('fetch', (event) => {
     );
   }
 });
+
+self.addEventListener('sync', (event) => {
+  console.log('[Service Worker] Background syncing', event);
+  if (event.tag === 'sync-new-posts') {
+    console.log('Service Worker] Syncing new Posts');
+    event.waitUntil(
+      readAllData('sync-posts')
+        .then((data) => {
+          for (var dt of data) {
+            // fetch('https://pwagram-684eb.firebaseio.com/posts.json', {
+            fetch('https://us-central1-pwagram-684eb.cloudfunctions.net/storePostData', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+              },
+              body: JSON.stringify({
+                id: dt.id,
+                title: dt.title,
+                location: dt.location,
+                image: 'https://firebasestorage.googleapis.com/v0/b/pwagram-684eb.appspot.com/o/main-image.jpg?alt=media&token=e8d41431-56e9-4168-ab25-0830799a78d4'
+              })
+            })
+            .then((res) => {
+              console.log('Sent data', res);
+              if (res.ok) {
+                res.json()
+                  .then((resData) => {
+                    deleteItemFromData('sync-posts', resData.id);
+                  })
+              }
+            })
+            .catch((err) => {
+              console.log('Error while sending data', err);
+            })
+          }
+        })
+    );
+  }
+})
 
 // self.addEventListener('fetch', (event) => {
 //     event.respondWith(

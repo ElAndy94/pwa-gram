@@ -8,7 +8,9 @@
   top: 56px;
   background: white;
   text-align: center;
-  display: none;
+  /* display: none; */
+  transform: translateY(100vh);
+  transition: transform 0.3s;
 }
 
 .main-image {
@@ -28,4 +30,37 @@
 .input-section {
   display: block;
   margin: 10px auto;
+}
+
+.shared-moment-card.mdl-card {
+  margin: 10px auto;
+  width: 270px;
+}
+
+.shared-moment-card .mdl-card__title {
+  height: 200px;
+}
+
+@media (min-width: 600px) {
+  .shared-moment-card.mdl-card {
+    width: 400px;
+  }
+}
+
+@media (min-width: 1000px) {
+  .shared-moment-card.mdl-card {
+    width: 45%;
+  }
+}
+
+@media (min-height: 700px) {
+  .shared-moment-card .mdl-card__title {
+    height: 300px;
+  }
+}
+ 
+@media (min-height: 1000px) {
+  .shared-moment-card .mdl-card__title {
+    height: 380px;
+  }
 }

@@ -1,2 +1,10 @@
 .idea
 node_modules
+
+\.firebase/hosting\.cHVibGlj\.cache
+
+\.firebaserc
+
+functions/index\.js
+
+functions/pwagram-key\.json
