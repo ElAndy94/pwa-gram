@@ -2,7 +2,7 @@ const dbPromise = idb.open('post-store', 1, (db) => {
     if (!db.objectStoreNames.contains('posts')) {
       db.createObjectStore('posts', {keyPath: 'id'});
     }
-  });
+});
 
   writeData = (st, data) => {
     return dbPromise
@@ -12,4 +12,13 @@ const dbPromise = idb.open('post-store', 1, (db) => {
         store.put(data);
         return tx.complete;
       });
+  }
+
+  readAllData = (st) => {
+    return dbPromise 
+      .then((db) => {
+        let tx = db.transaction(st, 'readonly');
+        let store = tx.objectStore(st);
+        return store.getAll();
+      })
   }
