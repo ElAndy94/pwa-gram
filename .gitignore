@@ -8,3 +8,5 @@ node_modules
 functions/index\.js
 
 functions/pwagram-key\.json
+
+functions/firebase-debug\.log
