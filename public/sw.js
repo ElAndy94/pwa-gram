@@ -163,7 +163,26 @@ self.addEventListener('sync', (event) => {
         })
     );
   }
-})
+});
+
+self.addEventListener('notificationclick', (event) => {
+  let notification = event.notification;
+  let action = event.action;
+
+  console.log(notification);
+
+  if (action === 'confirm') {
+    console.log('Confirm was chosen');
+    notification.close();
+  } else {
+    console.log(action);
+    notification.close();
+  }
+});
+
+self.addEventListener('notificationclose', (event) => {
+  console.log('Notification was closed', event);
+});
 
 // self.addEventListener('fetch', (event) => {
 //     event.respondWith(
