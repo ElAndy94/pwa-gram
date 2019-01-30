@@ -10,7 +10,7 @@ const canvasElement = document.querySelector('#canvas');
 const captureButton = document.querySelector('#capture-btn');
 const imagePicker = document.querySelector('#image-picker');
 const imagePickerArea = document.querySelector('#pick-image');
-const picture;
+let picture;
 
 initMedia = () => {
   if (!('mediaDevices' in navigator)) {
@@ -193,19 +193,22 @@ if ('indexedDB' in window) {
 }
 
 sendData = () => {
-  // fetch('https://pwagram-684eb.firebaseio.com/posts.json', {
-    fetch('https://us-central1-pwagram-684eb.cloudfunctions.net/storePostData', {
+  let id = new Date().toISOString();
+  let postData = new FormData();
+  postData.append('id', id);
+  postData.append('title', titleInput.value);
+  postData.append('location', locationInput.value);
+  postData.append('file', picture, id + '.png');
+
+  fetch('https://us-central1-pwagram-684eb.cloudfunctions.net/storePostData', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    },
-    body: JSON.stringify({
-      id: new Date().toISOString(),
-      title: titleInput.value,
-      location: locationInput.value,
-      image: 'https://firebasestorage.googleapis.com/v0/b/pwagram-684eb.appspot.com/o/main-image.jpg?alt=media&token=e8d41431-56e9-4168-ab25-0830799a78d4'
-    })
+    body: postData
+    // body: JSON.stringify({
+    //   id: new Date().toISOString(),
+    //   title: titleInput.value,
+    //   location: locationInput.value,
+    //   image: 'https://firebasestorage.googleapis.com/v0/b/pwagram-684eb.appspot.com/o/main-image.jpg?alt=media&token=e8d41431-56e9-4168-ab25-0830799a78d4'
+    // })
   })
     .then((res) => {
       console.log('Sent data', res);
@@ -229,7 +232,8 @@ form.addEventListener('submit', (event) => {
         let post = {
           id: new Date().toISOString(),
           title: titleInput.value,
-          location: locationInput.value
+          location: locationInput.value,
+          picture: picture
         };
         writeData('sync-posts', post)
           .then(() => {

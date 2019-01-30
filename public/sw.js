@@ -133,19 +133,21 @@ self.addEventListener('sync', (event) => {
       readAllData('sync-posts')
         .then((data) => {
           for (var dt of data) {
-            // fetch('https://pwagram-684eb.firebaseio.com/posts.json', {
+            let postData = new FormData();
+            postData.append('id', dt.id);
+            postData.append('title', dt.title);
+            postData.append('location', dt.location);
+            postData.append('file', dt.picture, dt.id + '.png');
+
             fetch('https://us-central1-pwagram-684eb.cloudfunctions.net/storePostData', {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-              },
-              body: JSON.stringify({
-                id: dt.id,
-                title: dt.title,
-                location: dt.location,
-                image: 'https://firebasestorage.googleapis.com/v0/b/pwagram-684eb.appspot.com/o/main-image.jpg?alt=media&token=e8d41431-56e9-4168-ab25-0830799a78d4'
-              })
+              body: postData
+              // body: JSON.stringify({
+              //   id: dt.id,
+              //   title: dt.title,
+              //   location: dt.location,
+              //   image: 'https://firebasestorage.googleapis.com/v0/b/pwagram-684eb.appspot.com/o/main-image.jpg?alt=media&token=e8d41431-56e9-4168-ab25-0830799a78d4'
+              // })
             })
             .then((res) => {
               console.log('Sent data', res);
