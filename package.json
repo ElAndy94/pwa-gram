@@ -4,7 +4,8 @@
   "description": "A complete guide to PWAs.",
   "main": "index.js",
   "scripts": {
-    "start": "http-server -c-1"
+    "start": "http-server -c-1",
+    "generate-sw": "workbox inject:manifest"
   },
   "keywords": [
     "pwa",
@@ -17,6 +18,7 @@
   "author": "Andrew Peliza",
   "license": "ISC",
   "devDependencies": {
-    "http-server": "^0.10.0"
+    "http-server": "^0.10.0",
+    "workbox-cli": "^2.0.0"
   }
 }
