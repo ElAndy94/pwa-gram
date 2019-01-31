@@ -10,7 +10,46 @@ const canvasElement = document.querySelector('#canvas');
 const captureButton = document.querySelector('#capture-btn');
 const imagePicker = document.querySelector('#image-picker');
 const imagePickerArea = document.querySelector('#pick-image');
+const locationBtn = document.querySelector('#location-btn');
+const locationLoader = document.querySelector('#location-loader');
+let fetchedLocation = {lat: 0, lng: 0};
 let picture;
+
+locationBtn.addEventListener('click', (event) => {
+  if (!('geolocation' in navigator)) {
+    return;
+  }
+  const sawAlert = false;
+
+  locationBtn.style.display = 'none';
+  locationLoader.style.display = 'block';
+
+  navigator.geolocation.getCurrentPosition((position) => {
+    locationBtn.style.display = 'inline';
+    locationLoader.style.display = 'none';
+    fetchedLocation = {lat: position.coords.latitude, lng: 0};
+    locationInput.value = 'In Manchester';
+    document.querySelector('#manual.location').classList.add('is-focused');
+
+  }, (err) => {
+    console.log(err);
+    locationBtn.style.display = 'inline';
+    locationLoader.style.display = 'none';
+
+    if (!sawAlert) {
+      alert('Couldn\t fetch location, please enter manually!');
+      sawAlert = true;
+    }
+
+    fetchedLocation = {lat: 0, lng: 0};
+  }, {timeout: 7000});
+});
+
+initLocation = () => {
+  if (!('geolocation' in navigator)) {
+    locationBtn.style.display = 'none';
+  }
+}
 
 initMedia = () => {
   if (!('mediaDevices' in navigator)) {
@@ -53,13 +92,17 @@ captureButton.addEventListener('click', (event) => {
   picture = dataURItoBlob(canvasElement.toDataURL());
 });
 
+imagePicker.addEventListener('change', (event) => {
+  picture = event.target.files[0];
+});
+
 openCreatePostModal = () => {
-  createPostArea.style.transform = 'translateY(0)';
+  setTimeout(() => {
+    createPostArea.style.transform = 'translateY(0)';
+  }, 1);
   initMedia();
-  // createPostArea.style.display = 'block';
-  // setTimeout(() => {
-  //   createPostArea.style.transform = 'translateY(0)';
-  // }, 1);
+  initLocation();
+  
   if (deferredPrompt) {
     deferredPrompt.prompt();
 
@@ -87,11 +130,20 @@ openCreatePostModal = () => {
 }
 
 closeCreatePostModal = () => {
-  createPostArea.style.transform = 'translateY(100vh)';
   imagePickerArea.style.display = 'none';
   videoPlayer.style.display = 'none';
   canvasElement.style.display = 'none';
-  // createPostArea.style.display = 'none';
+  locationBtn.style.display = 'inline';
+  locationLoader.style.display = 'none';
+  captureButton.style.display = 'inline';
+  if (videoPlayer.srcObject) {
+    videoPlayer.srcObject.getVideoTracks().forEach((track) => {
+      track.stop();
+    });
+  }
+  setTimeout(() => {
+    createPostArea.style.transform = 'translateY(100vh)';
+  }, 1);
 }
 
 shareImageButton.addEventListener('click', openCreatePostModal);
@@ -198,6 +250,8 @@ sendData = () => {
   postData.append('id', id);
   postData.append('title', titleInput.value);
   postData.append('location', locationInput.value);
+  postData.append('rawLocationLat', fetchedLocation.lat);
+  postData.append('rawLocationLng', fetchedLocation.lng);
   postData.append('file', picture, id + '.png');
 
   fetch('https://us-central1-pwagram-684eb.cloudfunctions.net/storePostData', {
@@ -233,7 +287,8 @@ form.addEventListener('submit', (event) => {
           id: new Date().toISOString(),
           title: titleInput.value,
           location: locationInput.value,
-          picture: picture
+          picture: picture,
+          rawLocation: fetchedLocation
         };
         writeData('sync-posts', post)
           .then(() => {

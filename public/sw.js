@@ -8,6 +8,7 @@ const STATIC_FILES = [
   '/index.html',
   '/offline.html',
   '/src/js/app.js',
+  '/src/js/utility.js',
   '/src/js/feedV2.js',
   '/src/js/idb.js',
   '/src/js/promise.js',
@@ -137,17 +138,13 @@ self.addEventListener('sync', (event) => {
             postData.append('id', dt.id);
             postData.append('title', dt.title);
             postData.append('location', dt.location);
+            postData.append('rawLocationLat', dt.rawLocation.lat);
+            postData.append('rawLocationLng', dt.rawLocation.lng);
             postData.append('file', dt.picture, dt.id + '.png');
 
             fetch('https://us-central1-pwagram-684eb.cloudfunctions.net/storePostData', {
               method: 'POST',
               body: postData
-              // body: JSON.stringify({
-              //   id: dt.id,
-              //   title: dt.title,
-              //   location: dt.location,
-              //   image: 'https://firebasestorage.googleapis.com/v0/b/pwagram-684eb.appspot.com/o/main-image.jpg?alt=media&token=e8d41431-56e9-4168-ab25-0830799a78d4'
-              // })
             })
             .then((res) => {
               console.log('Sent data', res);
