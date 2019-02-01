@@ -1,21 +1,76 @@
 importScripts('workbox-sw.prod.v2.1.3.js');
-
+importScripts('/src/js/idb.js');
+importScripts('/src/js/utility.js');
 
 const workboxSW = new self.WorkboxSW();
 
+workboxSW.router.registerRoute(/.*(?:googleapis|gstatic)\.com.*$/, workboxSW.strategies.staleWhileRevalidate({
+  cacheName: 'google-fonts',
+  chacheExpiration: {
+    maxEntries: 3,
+    maxAgeSeconds: 60 * 60 * 24 * 30
+  }
+}));
+
+workboxSW.router.registerRoute('https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css', workboxSW.strategies.staleWhileRevalidate({
+  cacheName: 'material-css'
+}));
+
+workboxSW.router.registerRoute(/.*(?:firebasestorage\.googleapis)\.com.*$/, workboxSW.strategies.staleWhileRevalidate({
+  cacheName: 'post-images'
+}));
+
+workboxSW.router.registerRoute('https://pwagram-684eb.firebaseio.com/posts.json', (args) => {
+  return fetch(args.event.request)
+    .then((res) => {
+      let clonedRes = res.clone();
+      clearAllData('posts')
+        .then(() => {
+          return clonedRes.json();
+        })
+          .then((data) => {
+            for (let key in data) {
+              writeData('posts', data[key]);
+            }
+          });
+      return res;
+    });
+});
+
+workboxSW.router.registerRoute((routeData) => {
+  return (routeData.event.request.headers.get('accept').includes('text/html'))
+}, (args) => {
+  return caches.match(args.event.request)
+    .then((res) => {
+      if (res) {
+        return res;
+      } else {
+        return fetch(args.event.request)
+          .then((res) => {
+            return caches.open('dynamic')
+              .then((cache) => {
+                cache.put(args.event.request.url, res.clone());
+                return res;
+              })
+          })
+          .catch((err) => {
+            return caches.match('/offline.html')
+              .then((res) => {
+                return res
+              });
+          });
+      }
+    })
+}); 
 
 workboxSW.precache([
-  {
-    "url": "404.html",
-    "revision": "0a27a4163254fc8fce870c8cc3a3f94f"
-  },
   {
     "url": "favicon.ico",
     "revision": "2cab47d9e04d664d93c8d91aec59e812"
   },
   {
     "url": "index.html",
-    "revision": "1c6123d073a97d16d7aafaa90b957ec3"
+    "revision": "797cbbf8f546a0338b9a2e7098dd9e38"
   },
   {
     "url": "manifest.json",
@@ -38,50 +93,6 @@ workboxSW.precache([
     "revision": "1c6d81b27c9d423bece9869b07a7bd73"
   },
   {
-    "url": "src/js/app.js",
-    "revision": "931381d6b09a5ef3c2c9f900468bf015"
-  },
-  {
-    "url": "src/js/feed.js",
-    "revision": "e809c1c0fdaa9465e50077c68ca7f793"
-  },
-  {
-    "url": "src/js/feedV2.js",
-    "revision": "c64e3da82ba76c8bb2b735083408f6c6"
-  },
-  {
-    "url": "src/js/fetch.js",
-    "revision": "6b82fbb55ae19be4935964ae8c338e92"
-  },
-  {
-    "url": "src/js/idb.js",
-    "revision": "017ced36d82bea1e08b08393361e354d"
-  },
-  {
-    "url": "src/js/material.min.js",
-    "revision": "713af0c6ce93dbbce2f00bf0a98d0541"
-  },
-  {
-    "url": "src/js/promise.js",
-    "revision": "10c2238dcd105eb23f703ee53067417f"
-  },
-  {
-    "url": "src/js/utility.js",
-    "revision": "9dc34f8709cf5265e262f48d4d8d14c3"
-  },
-  {
-    "url": "sw-base.js",
-    "revision": "6b4dac3581e91a641653bfd72ffd04a1"
-  },
-  {
-    "url": "sw.js",
-    "revision": "d7c95118b07e421c999a086f904ee804"
-  },
-  {
-    "url": "workbox-sw.prod.v2.1.3.js",
-    "revision": "a9890beda9e5f17e4c68f42324217941"
-  },
-  {
     "url": "src/images/main-image-lg.jpg",
     "revision": "31b19bffae4ea13ca0f2178ddb639403"
   },
@@ -92,5 +103,103 @@ workboxSW.precache([
   {
     "url": "src/images/main-image.jpg",
     "revision": "5c66d091b0dc200e8e89e56c589821fb"
+  },
+  {
+    "url": "src/js/material.min.js",
+    "revision": "713af0c6ce93dbbce2f00bf0a98d0541"
   }
 ]);
+
+self.addEventListener('sync', (event) => {
+  console.log('[Service Worker] Background syncing', event);
+  if (event.tag === 'sync-new-posts') {
+    console.log('Service Worker] Syncing new Posts');
+    event.waitUntil(
+      readAllData('sync-posts')
+        .then((data) => {
+          for (var dt of data) {
+            let postData = new FormData();
+            postData.append('id', dt.id);
+            postData.append('title', dt.title);
+            postData.append('location', dt.location);
+            postData.append('rawLocationLat', dt.rawLocation.lat);
+            postData.append('rawLocationLng', dt.rawLocation.lng);
+            postData.append('file', dt.picture, dt.id + '.png');
+
+            fetch('https://us-central1-pwagram-684eb.cloudfunctions.net/storePostData', {
+              method: 'POST',
+              body: postData
+            })
+            .then((res) => {
+              console.log('Sent data', res);
+              if (res.ok) {
+                res.json()
+                  .then((resData) => {
+                    deleteItemFromData('sync-posts', resData.id);
+                  })
+              }
+            })
+            .catch((err) => {
+              console.log('Error while sending data', err);
+            })
+          }
+        })
+    );
+  }
+});
+
+self.addEventListener('notificationclick', (event) => {
+  let notification = event.notification;
+  let action = event.action;
+
+  console.log(notification);
+
+  if (action === 'confirm') {
+    console.log('Confirm was chosen');
+    notification.close();
+  } else {
+    console.log(action);
+    event.waitUntil(
+      clients.matchAll()
+        .then((clis) => {
+          let client = clis.find((c) => {
+            return c.visibilityState === 'visiable';
+          });
+
+          if (client !== undefined) {
+            client.navigate(notification.data.openUrl);
+            client.focus();
+          } else {
+            clients.openWindow(notification.data.openUrl);
+          }
+          notification.close();
+        })
+    );
+  }
+});
+
+self.addEventListener('notificationclose', (event) => {
+  console.log('Notification was closed', event);
+});
+
+self.addEventListener('push', (event) => {
+  console.log('Push Notification received', event);
+
+  let data = {title: 'New!', content: 'Something new happend!', openUrl: '/'};
+  if (event.data) {
+    data = JSON.parse(event.data.text());
+  }
+
+  let options = {
+    body: data.content,
+    icon: '/src/images/icons/app-icon-96x96.png',
+    badge: '/src/images/icons/app-icon-96x96.png',
+    data: {
+      url: data.openUrl
+    }
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  );
+});
