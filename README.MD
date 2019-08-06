@@ -1,6 +1,32 @@
-# How to Use
-You need [Node.js](https://nodejs.org) installed on your machine. Simply download the installer from [nodejs.org](https://nodejs.org) and go through the installation steps.
+# PWA-Gram
 
-Once Node.js is installed, open your command prompt or terminal and **navigate into this project folder**. There, run `npm install` to install all required dependencies.
+Little app which gives you a unique mobile feel to a web app.
 
-Finally, run `npm start` to start the development server and visit [localhost:8080](http://localhost:8080) to see the running application.
+## Getting Started
+
+These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+
+### Installing
+
+A step by step series of examples that tell you how to get a development env running
+
+Say what the step will be
+
+```
+Fork or Clone the repo ->
+
+cd into Project and install dependancies using local terminal ->
+
+Once all packages have been install -> 
+
+Run Npm start or yarn start on the backend and on the client.
+
+```
+
+## Built With
+
+* [Yarn](https://yarnpkg.com/en/) - Dependency Management
+* [Node](https://nodejs.org/en/) - Server
+* [MongoDB](https://www.mongodb.com/) - Database
+* [Mongoose](https://mongoosejs.com/) - Mongodb object modeling
+* [Express](https://expressjs.com/) - Web framework for Node.js
